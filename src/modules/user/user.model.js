@@ -1,0 +1,29 @@
+const mongoose = require('mongoose')
+const { Schema } = mongoose
+const bcrypt = require('bcrypt')
+
+const userSchema = new Schema({
+    userName: { type: String, required: true },
+    userEmail: { type: String, unique: true, required: true },
+    userPass: { type: String },
+    userPhone: { type: String },
+    userAvt: { type: String, default: 'https://m.yodycdn.com/blog/hinh-anh-meo-hai-huoc-yodyvn2.jpg' },
+    userStatus: { type: String, enum:['Active', 'Banned', 'UnVerified'], default: 'UnVerified' },
+    userRole: { type: String, enum: ['admin', 'creator'], default: 'creator' },
+    createDate: { type: Date, default: Date.now },
+    userAddress: { type: String },
+    userFirstName: { type: String },
+    userLastName: { type: String },
+})
+
+userSchema.pre('save', async function () {
+    if (this.isModified('userPass')) {
+        this.userPass = await bcrypt.hash(this.userPass, 10)
+    }
+})
+
+userSchema.methods.comparePassword = function (plainPassword) {
+    return bcrypt.compare(plainPassword, this.userPass)
+}
+
+module.exports = mongoose.model('User', userSchema)
