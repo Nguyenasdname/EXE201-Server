@@ -1,38 +1,41 @@
-const nodemailer = require('nodemailer');
+const Mailjet = require('node-mailjet');
 require('dotenv').config();
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465, 
-    secure: true, 
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
+const mailjet = Mailjet.apiConnect(
+    process.env.MJ_APIKEY_PUBLIC,
+    process.env.MJ_APIKEY_PRIVATE
+);
 
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('SMTP Connection Error:', error);
-    } else {
-        console.log('SMTP Server is ready to send emails');
-    }
-});
-
-exports.sendMail = async ( to, subject, html ) => {
+exports.sendMail = async (to, subject, html) => {
     try {
-        const mailOptions = {
-            from: `"My App" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            html
-        };
+        const request = await mailjet
+            .post('send', { version: 'v3.1' })
+            .request({
+                Messages: [
+                    {
+                        From: {
+                            Email: process.env.EMAIL_USER || 'fundtalkexe@gmail.com',  // email đã verify trong Mailjet
+                            Name: 'Fundtalk',  // tên hiển thị
+                        },
+                        To: [
+                            {
+                                Email: to,
+                                // Name: 'Người nhận' (tùy chọn, có thể bỏ)
+                            },
+                        ],
+                        Subject: subject,
+                        HTMLPart: html,  // nội dung HTML của bạn
+                        // TextPart: 'Phiên bản text nếu cần fallback' (tùy chọn)
+                    },
+                ],
+            });
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`Email sent to: ${to}`);
-        return info;
+        console.log('Email sent to:', to);
+        console.log('Mailjet response:', request.body);  // để debug nếu cần
+        return request.body;
     } catch (error) {
-        console.error('Error sending email:', error);
+        console.error('Mailjet Error:', error.statusCode, error.message);
+        if (error.ErrorMessage) console.error('Details:', error.ErrorMessage);
         throw error;
     }
 };
