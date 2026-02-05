@@ -2,14 +2,16 @@ const mongoose = require('mongoose')
 
 const projectSchema = mongoose.Schema({
     projectName: { type: String, required: true },
-    projectType: { type: String, required: true },
+    projectType: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    projectPackageId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProjectPackage', required: true },
     briefIntro: { type: String },
     brandImage: [{ type: String }],
     activityImage: [{ type: String }],
     summary: { type: String },
     brandStory: { type: String },
     videoLink: { type: String },
+    currentAmount: { type: Number },
     totalCallValue: { type: Number },
     issueQuantity: { type: Number },
     openTime: { type: Date },

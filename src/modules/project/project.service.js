@@ -1,6 +1,7 @@
 const Project = require('./project.model')
 const { uploadImageToCloudinary } = require('../../utils/cloudinary.service')
 
+
 exports.createProject = async (data, files, userId) => {
     const brandImageUrls = []
     const activityImageUrls = []
@@ -30,7 +31,7 @@ exports.createProject = async (data, files, userId) => {
 
     console.log(`The brandImageUrls is: ${brandImageUrls}`)
     console.log(`The activityImageUrls is: ${activityImageUrls}`)
-    
+
     const project = new Project({
         ...data,
         userId: userId,
@@ -40,7 +41,6 @@ exports.createProject = async (data, files, userId) => {
         brandImage: brandImageUrls,
         activityImage: activityImageUrls
     })
-    console.log(`The project is: ${project}`)
 
     await project.save()
     return project
@@ -62,3 +62,37 @@ exports.createProject = async (data, files, userId) => {
 //     await project.save()
 //     return project
 // }
+
+exports.getProjectById = async (projectId) => {
+    const project = await Project.findById(projectId).populate('projectType').populate('userId')
+    if (!project) throw new Error('Project not found')
+    return project
+}
+
+exports.getAllProjects = async () => {
+    const projects = await Project.find().populate('projectType').populate('userId')
+    return projects
+}
+
+exports.getProjectByUserId = async (userId) => {
+    const projects = await Project.find({ userId: userId }).populate('projectType').populate('userId')
+    return projects
+}
+
+exports.approveProject = async (projectId) => {
+    const project = await Project.findById(projectId).populate('projectPackageId')
+    const now = new Date()
+    const months = project.projectPackageId.time
+
+    project.status = 'active'
+    project.openTime = new Date(now.setMonth(now.getMonth() + months))
+    project.currentAmount = 0
+
+    return await project.save()
+}
+
+exports.deniedProject = async (projectId) => {
+    const project = await Project.findById(projectId)
+    project.status = 'failed'
+    return await project.save()
+}
